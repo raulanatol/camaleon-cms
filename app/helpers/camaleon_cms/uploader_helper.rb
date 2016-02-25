@@ -190,31 +190,26 @@ module CamaleonCms::UploaderHelper
 
   # parse file information of FOG file
   def cama_uploader_parse_file(file)
-    res = {"name"=> File.basename(file.key), "file"=> file.key, "size"=> file.content_length, "url"=> (file.public_url rescue [current_site.get_option("filesystem_s3_endpoint"), file.key ].join("/")), "deleteUrl"=> "" }
-    ext = File.extname(file.key).sub(".", "").downcase
-    res["format"] = "unknown"
-    if "jpg,jpeg,png,gif,bmp,ico".split(",").include?(ext)
-      if File.extname(res["name"]) == ".gif"
-        res["thumb"] = res["url"]
-      else
-        res["thumb"] = "#{File.dirname(res["url"])}/#{cama_parse_for_thumb_name(file.key)}" rescue ""
+    cached('cama_uploader_parse_file', file.key, file.content_length, 2.years) do
+      res = {'name' => File.basename(file.key), 'file' => file.key, 'size' => file.content_length, 'url' => (file.public_url rescue [current_site.get_option('filesystem_s3_endpoint'), file.key].join('/')), 'deleteUrl' => ''}
+      ext = File.extname(file.key).sub('.', '').downcase
+      res['format'] = 'unknown'
+      case ext
+        when 'jpg', 'jpeg', 'png', 'bmp', 'ico', 'gif'
+          res['thumb'] = (File.extname(res['name']) == '.gif') ? res['url'] : "#{File.dirname(res['url'])}/#{cama_parse_for_thumb_name(file.key)}" rescue ''
+          res['format'] = 'image'
+        when 'flv', 'webm', 'wmv', 'avi', 'swf', 'mp4'
+          res['format'] = 'video'
+        when 'mp3', 'ogg'
+          res['format'] = 'audio'
+        when 'pdf', 'xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx', 'html', 'txt', 'xml', 'json'
+          res['format'] = 'document'
+        when 'zip', '7z', 'rar', 'tar', 'bz2', 'gz', 'rar2'
+          res['format'] = 'compress'
       end
-      res["format"] = "image"
+      res['type'] = (MIME::Types.type_for(file.key).first.content_type rescue '')
+      res
     end
-    if "flv,webm,wmv,avi,swf,mp4".split(",").include?(ext)
-      res["format"] = "video"
-    end
-    if "mp3,ogg".split(",").include?(ext)
-      res["format"] = "audio"
-    end
-    if "pdf,xls,xlsx,doc,docx,ppt,pptx,html,txt,xml,json".split(",").include?(ext)
-      res["format"] = "document"
-    end
-    if "zip,7z,rar,tar,bz2,gz,rar2".split(",").include?(ext)
-      res["format"] = "compress"
-    end
-    res["type"] = (MIME::Types.type_for(file.key).first.content_type rescue "")
-    res
   end
 
   # helper to find an available filename for file_path in that directory

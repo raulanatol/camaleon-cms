@@ -5,7 +5,7 @@ module CamaleonCms::CacheHelper
     Base64.urlsafe_encode64("#{first_id}::#{second_id}::#{third_id}").chomp.tr('=\n', '')
   end
 
-  def cached(first_id, second_id, third_id = '-')
+  def cached(first_id, second_id, third_id = '-', timeToLive = 2.weeks)
     init_cache
     if @cache.nil?
       yield
@@ -15,7 +15,7 @@ module CamaleonCms::CacheHelper
         @cache.get(cache_hash_key)
       else
         response = yield
-        @cache.set(cache_hash_key, response, 2.weeks)
+        @cache.set(cache_hash_key, response, timeToLive)
         response
       end
     end
