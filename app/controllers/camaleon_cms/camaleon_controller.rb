@@ -38,7 +38,7 @@ class CamaleonCms::CamaleonController < ApplicationController
 
   # show page error
   def render_error(status = 404, exception = nil, message = "")
-    Rails.logger.info "========#{exception.message if exception.present?}====#{params[:error_msg]}========#{caller.inspect}"
+    Rails.logger.info "======url: #{request.original_url rescue nil}======message: #{exception.message if exception.present?}====#{params[:error_msg]}========#{caller.inspect}"
     @message = "#{message} #{params[:error_msg] || (exception.present? ? "#{exception.message}<br><br>#{caller.inspect}" : "")}"
     @message = "" if Rails.env == "production"
     render "camaleon_cms/#{status}", :status => status
@@ -70,9 +70,14 @@ class CamaleonCms::CamaleonController < ApplicationController
 
     request.env.except!('HTTP_X_FORWARDED_HOST') if request.env['HTTP_X_FORWARDED_HOST'] # just drop the variable
 
+    views_dir = "app/apps/"
+    self.prepend_view_path(File.join($camaleon_engine_dir, views_dir).to_s)
+    self.prepend_view_path(Rails.root.join(views_dir).to_s)
+
     # past plugins version support
     self.prepend_view_path(File.join($camaleon_engine_dir, "app", "apps", "plugins"))
     self.prepend_view_path(Rails.root.join("app", "apps", 'plugins'))
+
     CamaleonCms::PostDefault.current_user = cama_current_user
     CamaleonCms::PostDefault.current_site = current_site
   end
