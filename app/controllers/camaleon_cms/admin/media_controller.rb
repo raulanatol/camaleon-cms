@@ -69,13 +69,15 @@ class CamaleonCms::Admin::MediaController < CamaleonCms::AdminController
 
   # upload files from media uploader
   def upload(settings = {})
-    f = {error: "File not found."}
+    f = {error: 'File not found.'}
     if params[:file_upload].present?
       f = upload_file(params[:file_upload], {folder: params[:folder], dimension: params['dimension'], formats: params[:formats]}.merge(settings))
     end
 
-    render(partial: "render_file_item", locals:{ file: f }) unless f[:error].present?
+    render(partial: 'render_file_item', locals: {file: f}) unless f[:error].present?
     render inline: f[:error] if f[:error].present?
+    prefix = "#{current_site.upload_directory_name}/#{params[:folder]}/".gsub(/(\/){2,}/, '/')
+    cama_mark_prefix_like_dirty(prefix) unless f[:error].present?
   end
 
   private
